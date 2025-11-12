@@ -13,7 +13,7 @@ socket.on("assign",selectuser=>{
   socket.data.username = selectuser;
    console.log(`🟢 ${selectuser} connected (${socket.id})`);
 
-   socket.emit("assigned", { id: socket.id });
+   socket.emit("assigned",  selectuser );
     io.emit("online_users", Array.from(onlineUser.keys())); 
     
 })
@@ -21,14 +21,20 @@ socket.on("assign",selectuser=>{
   
   
 
-    // socket.on("joinChat",(userId)=>{
-    //   socket.join(room)
-    //   console.log("you connected to room1"+ userId);
-    // })
+    socket.on("joinChat",(userId)=>{
+      const room = [socket.data.username, userId].sort().join("_")
+     
    
-    // socket.on("chat",({senderId,text})=>{
-    //   io.to(room).emit("chat",{senderId,text})
-    // })
+      socket.join(room)
+      socket.emit("room",room)
+       console.log(room,"ye hai");
+  
+    })
+   
+    socket.on("chat",({senderId,room,text})=>{
+     
+      io.to(room).emit("chat",{senderId,text})
+    })
 
 
     
