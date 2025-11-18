@@ -7,6 +7,51 @@ let currentUser = sessionStorage.getItem("username");
 let receiverid
 const currentPage = window.location.pathname;
 
+//---------------signup page--------------------------
+async function signupuser(username,email,password) {
+   try {
+      const res = await fetch(`${url}users/signup`,{
+        method:"POST",
+         headers: {
+        "Content-Type": "application/json"  
+      },
+     body: JSON.stringify({ username,email,password })}
+        );
+
+
+     const data = await res.json(); 
+
+    if (!res.ok) {
+     
+      throw new Error( data.message || "Signup failed");
+    }
+
+    return data; 
+    } catch (err) {
+      console.error("Error in signup user:", err);
+      return err
+    }
+
+}
+
+const signup = document.getElementById("Signup");
+signup.addEventListener("submit",async e=>{
+ 
+  e.preventDefault();
+  
+ const username= document.getElementById("username").value
+ const email= document.getElementById("email").value
+ const password= document.getElementById("password").value
+
+const res=await signupuser(username,email,password)
+console.log(res);
+})
+
+
+
+//----------------login page-----------------
+
+// index page--------------------------
   const userslist = document.getElementById("users");
   async function fetchMessage(selectedUser) {
     try {
@@ -29,7 +74,7 @@ const currentPage = window.location.pathname;
    const msgs = await fetchMessage(selectedUser);
   
     msgs.forEach((msg) => {
-      console.log(msg.text,"ye hai bhai")
+      
      const li = document.createElement("li");
 
      if (currentUser !== msg.sender) {
@@ -66,18 +111,22 @@ const currentPage = window.location.pathname;
     })
   }
 
+
+
+  // ----------------------------chat page----------------
+
 if (currentPage.endsWith("index.html") || currentPage === "/") {
 
   const selectBtn = document.getElementById("select");
 
- 
+ //poupulate user if exists for static index page
  
   populateUsers();
 
   let selectedUser = "";
   userslist.addEventListener("change", () => {
     selectedUser = userslist.options[userslist.selectedIndex].text;
-    console.log("User selected:", selectedUser);
+   
   });
 
 

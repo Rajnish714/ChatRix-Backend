@@ -18,7 +18,7 @@ async function onload() {
     try{
        await connectDB()
        await listen(io)
-       await loaduser()
+      // await loaduser()
     }catch(err){
         console.log(err,"something went wrong ");
     }
