@@ -1,4 +1,4 @@
-import {User} from "../models/user.model.js"
+import { User } from "../models/user.model.js";
 
 export async function getUsers(req, res) {
   try {
@@ -14,4 +14,3 @@ export async function getUsers(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
-

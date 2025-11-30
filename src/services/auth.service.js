@@ -21,7 +21,7 @@ export const generateTokens = async (userId) => {
       expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
     },
     { upsert: true } 
-  );
+  )
 
   return { accessToken, refreshToken };
 };
