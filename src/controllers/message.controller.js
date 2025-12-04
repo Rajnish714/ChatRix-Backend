@@ -1,12 +1,14 @@
 import { Message } from "../models/message.model.js";
+import AppError from "../utils/AppError.js"
+import { catchAsync } from "../utils/catchAsync.js";
 
 
-export const getMessages = async (req, res) => {
-  try {
+export const getMessages = catchAsync(async (req, res, next) => {
+ 
     const { chatId } = req.query;
-    console.log(chatId);
+   
     if (!chatId) {
-      return res.status(400).json("chatId is required");
+      return  next(new AppError("chatId is required", 400));
     }
 
     const messages = await Message.find({ chatId })
@@ -14,10 +16,6 @@ export const getMessages = async (req, res) => {
       .sort({ createdAt: 1 });
    
  
-    res.status(200).json(messages);
-  } catch (err) {
-   
- console.log("Error creating private chat:", err);
-    res.status(500).json("Server error");
-  }
-};
+    res.json(messages);
+
+})

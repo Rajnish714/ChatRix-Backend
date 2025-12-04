@@ -15,13 +15,24 @@ const chatSchema = new mongoose.Schema({
 
   groupName: {
     type: String,
-    default: null
+    default: null,
+    required: function(){
+      return this.isGroup
+    }
   },
 
   groupImage: {
     type: String,
-    default: null
+    default: "/assets/default-group.png"
   },
+
+createdBy:{
+  type:mongoose.Schema.Types.ObjectId,
+  ref:"User",
+  required: function (){
+    return this.isGroup
+  }
+ },
 
   admins: [
     {

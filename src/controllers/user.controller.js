@@ -1,16 +1,14 @@
 import { User } from "../models/user.model.js";
+import { catchAsync } from "../utils/catchAsync.js";
+import AppError from "../utils/AppError.js";
+export const getUsers=catchAsync(async (req, res, next) => {
 
-export async function getUsers(req, res) {
-  try {
     const users = await User.find();
 
     if (!users || users.length === 0) {
-      return res.status(404).json({ message: "No users found" });
+      return next(new AppError("user not found", 404));
     }
 
     res.status(200).json(users);
-  } catch (err) {
-    console.error("Error fetching users:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
+ 
+})

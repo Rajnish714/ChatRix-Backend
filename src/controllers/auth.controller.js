@@ -1,43 +1,43 @@
 import { User } from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { catchAsync } from "../utils/catchAsync.js";
+import AppError from "../utils/AppError.js";
 
 import { generateTokens } from "../services/auth.service.js";
 import { Auth } from "../models/auth.model.js";
+
 
 const saltRounds = 10;
 
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-export async function getCurrentUser(req, res) {
-  try {
+export const getCurrentUser=catchAsync(async (req, res, next) => {
+  
     const userId = req.user.userId;
     if (!userId) {
-      return res.status(400).json("user required");
+      return next(new AppError("user id is required", 400));
     }
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(400).json({ message: "user not found" });
+      return next(new AppError("user not found", 404));
     }
-    res.status(200).json({
+    res.json({
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
       },
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
 
-export async function signup(req, res) {
-  try {
+}
+)
+export const signup=catchAsync(async (req, res, next) => {
+ 
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return next(new AppError("all field are required", 400));
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const newUser = new User({
@@ -47,18 +47,15 @@ export async function signup(req, res) {
     });
     const user = await newUser.save();
     res.status(201).json({ user, message: "Signup successful" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
+  
+})
 
-export async function login(req, res) {
-  try {
+export const login=catchAsync(async (req, res, next) => {
+
     const { email, password } = req.body;
     console.log(email, password);
     if (!email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return next(new AppError("all field are required", 400));
     }
 
     const user = await User.findOne({ email });
@@ -83,29 +80,27 @@ export async function login(req, res) {
         email: user.email,
       },
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-export async function refreshToken(req, res) {
-  try {
+ 
+})
+
+export const refreshToken=catchAsync(async (req, res, next) => {
+  
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
-      return res.status(401).json({ message: "No refresh token provided" });
+      return next(new AppError("all field are required", 401));
     }
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, REFRESH_SECRET);
     } catch (error) {
-      return res.status(403).json({ message: "Invalid refresh token" });
+      return  next(new AppError("Invalid refresh token", 403));
     }
 
     let tokenData = await Auth.findOne({ userId: decoded.userId });
 
     if (!tokenData) {
-      return res.status(403).json({ message: " Refresh token not found" });
+      return next(new AppError("Refresh token not found", 403));
     }
 
     const isValidRT = await bcrypt.compare(
@@ -113,7 +108,7 @@ export async function refreshToken(req, res) {
       tokenData.refreshTokenHash
     );
     if (!isValidRT) {
-      return res.status(403).json({ message: "Refresh token mismatch" });
+      return next(new AppError("Refresh token mismatch", 403));
     }
 
     const { accessToken, refreshToken: newRefreshToken } = await generateTokens(
@@ -131,13 +126,11 @@ export async function refreshToken(req, res) {
       message: "New tokens generated",
       accessToken,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
+ 
+})
 
-export async function logout(req, res) {
-  try {
+export const logout=catchAsync(async (req, res, next) =>{
+ 
     const refreshToken = req.cookies?.refreshToken;
     if (refreshToken) {
       let decode;
@@ -157,9 +150,7 @@ export async function logout(req, res) {
       sameSite: "lax",
       path: "/",
     });
-    res.status(200).json({ message: "Logged out successfully" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+    res.json({ message: "Logged out successfully" });
+
 }
+)

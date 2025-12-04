@@ -1,13 +1,16 @@
 import { Chat } from "../models/chat.model.js";
+import { catchAsync } from "../utils/catchAsync.js";
+import AppError from "../utils/AppError.js";
 
-export async function getorCreatePrivateChatId(req,res) {
-    try{
+
+export const getorCreatePrivateChatId=catchAsync(async (req, res, next) => {
+   
     const {otherUserId}= req.body
     
    const myId = req.user.userId;
 
     if (!otherUserId) {
-      return res.status(400).json({ message: "otherUserId required" });
+      return next(new AppError("otherUserId is required", 400));
     }
      let chat = await Chat.findOne({
       isGroup: false,
@@ -22,8 +25,33 @@ export async function getorCreatePrivateChatId(req,res) {
     }
 
     res.status(200).json(chat);
-    } catch (err) {
-    console.log("Error creating private chat:", err);
-    res.status(500).json("Server error");
+    } 
+    )
+
+   export const createGroup=catchAsync(async (req, res, next) =>{
+
+   const myId = req.user.userId;
+    const { imageUrl,groupName,members } = req.body;
+   
+    if(!myId ){
+      return next(new AppError("userId is required", 400));
+    }
+    
+    if (!groupName) {
+    return next(new AppError("Group name is required", 400));
   }
-   } 
+   const finalMembers = Array.isArray(members) ? members : [];
+ 
+    const newGroup= await Chat.create({
+      isGroup:true,
+      createdBy:myId,
+      admins:[myId],
+      members: [myId, ...finalMembers],
+      groupName,
+      groupImage: imageUrl || undefined, 
+      
+    });
+
+    res.status(201).json({message:"group created successfully",data:newGroup})
+ 
+   })
