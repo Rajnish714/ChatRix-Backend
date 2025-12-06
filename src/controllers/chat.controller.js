@@ -52,7 +52,7 @@ export const createGroup=catchAsync(async (req, res, next) =>{
 
 //--------------get my group ---------------------------------
 
-export const getMygroup=catchAsync(async (req, res, next) =>{
+export const getMyGroup=catchAsync(async (req, res, next) =>{
    const myId = req.user.userId;
       
   if(!myId ) return next(new AppError("userId is required", 400));
@@ -75,29 +75,62 @@ export const getMygroup=catchAsync(async (req, res, next) =>{
 
 //--------------Add group member---------------------------------
 
-export const addgroupMember=catchAsync(async (req, res, next) =>{
+export const addGroupMember=catchAsync(async (req, res, next) =>{
     
     const { chatId } = req.query;
     const myId = req.user.userId;
     const {  members } = req.body;
   
     if(!myId ) return next(new AppError("userId is required", 400))
-      console.log("ye hai",chatId, "members",members);
-    if (!chatId || !members) return next(new AppError("chatId and members is required", 400));
+    if(!chatId || !members) return next(new AppError("chatId and members is required", 400));
  
     const group= await Chat.findById(chatId)
     if(!group) return next(new AppError("group not found", 404));
     
-    if (!group.isGroup) return next(new AppError("Cannot add members to a 1v1 chat", 400));
-    if (!group.admins.some(id => id.toString() === myId)) return next(new AppError("Only admins can add members", 403));
+    if(!group.isGroup) return next(new AppError("Cannot add members to a 1v1 chat", 400));
+    if(!group.admins.some(id => id.toString() === myId)) return next(new AppError("Only admins can add members", 403));
        
     const finalMembers = Array.isArray(members) ? members : [];
   
     const newMember=await Chat.findByIdAndUpdate(chatId, {
-    $addToSet: { members: {$each: finalMembers} },
-   }).populate("members", "username profilePic").populate("admins", "username")
+    $addToSet: { members: {$each: finalMembers} }},{new: true}
+  ).populate("members", "username profilePic").populate("admins", "username")
 
     res.status(201).json({message:"members added successfully",data:newMember})
     io.to(chatId).emit("memberAdded", {chatId, member: newMember});
    })
 
+//--------------Remove group member---------------------------------
+
+export const removeGroupMember=catchAsync(async (req, res, next) =>{
+    
+    const { chatId } = req.query;
+    const myId = req.user.userId;
+    const {  members } = req.body;
+  
+    if(!myId ) return next(new AppError("userId is required", 400))
+    if(!chatId || !members) return next(new AppError("chatId and members is required", 400));
+ 
+    const group = await Chat.findById(chatId)
+    if(!group) return next(new AppError("group not found", 404));
+    
+    if(!group.isGroup) return next(new AppError("Cannot add members to a 1v1 chat", 400));
+    if(!group.admins.some(id => id.toString() === myId)) return next(new AppError("Only admins can removes members", 403));
+       
+    const finalMembers = Array.isArray(members) ? members : [];
+
+    const existingMembers = finalMembers.filter(memberId =>
+    group.members.map(m => m.toString()).includes(memberId)
+     );
+
+    if (existingMembers.length === 0) {
+    return next(new AppError("None of the provided members exist in this group", 400));
+     }
+  
+    const updatedGroup = await Chat.findByIdAndUpdate(chatId, {
+    $pull: { members: {$in: finalMembers} }},
+    {new: true}).populate("members", "username profilePic").populate("admins", "username");
+
+    res.status(201).json({message:"members removed successfully",data:updatedGroup})
+    io.to(chatId).emit("memberRemoved", {chatId, removed: finalMembers});
+   })
