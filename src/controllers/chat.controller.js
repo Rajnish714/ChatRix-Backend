@@ -58,6 +58,30 @@ export const createGroup=catchAsync(async (req, res, next) =>{
     res.status(201).json({message:"group created successfully",data:newGroup})
     })
 
+//--------------get all Chats ---------------------------------
+
+export const getAllChats = catchAsync(async (req, res, next) => {
+  const myId = req.user.userId;
+
+  if (!myId) return next(new AppError("userId is required", 400));
+
+  const chats = await Chat.find({
+    members: myId
+  })
+    .populate("members", "username profilePic")
+    .populate({
+      path: "lastMessage",
+      select: "text sender createdAt"
+    })
+    .sort({ updatedAt: -1 });
+
+  res.status(200).json({
+    message: "Chats fetched successfully",
+    data: chats
+  });
+});
+
+
 //--------------get my group ---------------------------------
 
 export const getMyGroups=catchAsync(async (req, res, next) =>{

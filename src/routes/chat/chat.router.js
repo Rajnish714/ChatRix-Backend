@@ -1,11 +1,12 @@
 import express from "express"
-import { getorCreatePrivateChatId,createGroup, addGroupMember,getMyGroups,removeGroupMember,addGroupAdmin,removeGroupAdmin  } from "../../controllers/chat.controller.js"
+import { getorCreatePrivateChatId,createGroup, addGroupMember,getMyGroups,getAllChats,removeGroupMember,addGroupAdmin,removeGroupAdmin  } from "../../controllers/chat.controller.js"
 import { verifyAccessToken } from "../../midlleware/auth.middleware.js"
 
 const chatRouter = express.Router()
 
 
 chatRouter.get("/get-groups",verifyAccessToken,getMyGroups)
+chatRouter.get("/get-allchat",verifyAccessToken,getAllChats)
 
 chatRouter.post("/private",verifyAccessToken,getorCreatePrivateChatId)
 chatRouter.post("/create-group",verifyAccessToken,createGroup)

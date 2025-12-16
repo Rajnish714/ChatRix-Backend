@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import { globalErrorHandler } from "./src/midlleware/errorHandler.middleware.js";
 import api from "./src/routes/api.js"; 
 
-const allowedOrigins = ["http://localhost:3000", "http://192.168.1.12:3000"];
+const allowedOrigins = ["http://localhost:3000","http://localhost:4000", "http://192.168.1.12:3000"];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
