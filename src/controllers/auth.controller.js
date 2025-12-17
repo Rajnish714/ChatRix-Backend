@@ -29,6 +29,7 @@ export const getCurrentUser=catchAsync(async (req, res, next) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        profilePic: user.profilePic,
       },
     });
 
@@ -176,6 +177,7 @@ export const login=catchAsync(async (req, res, next) => {
       secure: false,
       sameSite: "lax",
       path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
     res.json({

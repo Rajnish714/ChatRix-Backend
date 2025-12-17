@@ -35,6 +35,12 @@ export async function registerSocketHandlers(io, socket) {
     console.log(`User ${socket.data.userId} joined chat ${chatId}`);
   });
 
+socket.on("leaveChat", (chatId) => {
+  socket.leave(chatId);
+  socket.data.chatId = null;
+  console.log(`User ${socket.data.userId} left chat ${chatId}`);
+});
+
   //chat for sending real time msgs and saving
   socket.on("chat", async ({ chatId, text }) => {
     try {
@@ -54,8 +60,8 @@ export async function registerSocketHandlers(io, socket) {
       io.to(chatId).emit("chat", {
         _id: message._id,
         chatId,
-        senderId: socket.data.userId,
-        senderName: socket.data.username,
+        sender: {_id:socket.data.userId,
+          username:socket.data.username},
         text,
         createdAt: message.createdAt
       });
