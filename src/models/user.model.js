@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema(
     
     profilePic: {
      type: String,
-     default: "/assets/profile.png"
+     default: "https://api.dicebear.com/9.x/adventurer/svg?seed=Jocelyn"
     },
     
     isVerified: {

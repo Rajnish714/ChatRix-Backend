@@ -25,8 +25,8 @@ app.use(cors({
 
 
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
-app.use("/assets", express.static("public/assets"));
+// app.use(express.static(path.join(__dirname, "public")));
+// app.use("/assets", express.static("public/assets"));
 app.use("/v1", api);
 app.use(globalErrorHandler)
 
