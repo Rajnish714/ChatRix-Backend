@@ -1,69 +1,174 @@
 import { User } from "../models/user.model.js";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
+import { catchAsync } from "../utils/catchAsync.js";
+import AppError from "../utils/AppError.js";
 import { generateTokens } from "../services/auth.service.js";
 import { Auth } from "../models/auth.model.js";
+import { Otp } from "../models/otp.model.js";
+import { sendOTP,verifyOTPService } from "../services/otp.services.js";
+import { createHash,compareHash } from "../utils/hash.js";
+
 
 const saltRounds = 10;
 
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-export async function getCurrentUser(req, res) {
-  try {
+export const getCurrentUser=catchAsync(async (req, res, next) => {
+  
     const userId = req.user.userId;
     if (!userId) {
-      return res.status(400).json("user required");
+      return next(new AppError("user id is required", 400));
     }
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(400).json({ message: "user not found" });
+      return next(new AppError("user not found", 404));
     }
-    res.status(200).json({
+    res.json({
+      message:"user fetched successfully",
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
+        profilePic: user.profilePic,
       },
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+
 }
+)
 
-export async function signup(req, res) {
-  try {
-    const { username, email, password } = req.body;
+export const signup=catchAsync(async (req, res, next) => {
+ 
+  const { username, email,password} = req.body;
+    
+   if(!username || !email || !password) return next(new AppError("all field are required", 400));
+    
+   const existing = await User.findOne({ email });
+   if (existing) return next(new AppError("Email already registered", 400));
+  
+    const passwordHash = await createHash(password)
+    
+    const {otpSession}= await sendOTP(email,"register",{
+    username,
+    passwordHash,
+  })
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const newUser = new User({
-      username,
-      email,
-      password: hashedPassword,
-    });
-    const user = await newUser.save();
-    res.status(201).json({ user, message: "Signup successful" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.json({
+    message: "OTP sent to your email",
+    otpSession,
+  });
+
+})
+export const verifyOTP = catchAsync(async (req, res, next) => {
+  const { otp, otpSession } = req.body;
+
+  if (!otp || !otpSession) {
+    return next(new AppError("OTP and session required", 400));
   }
-}
 
-export async function login(req, res) {
-  try {
+  const result = await verifyOTPService(otp, otpSession);
+ 
+
+  const { email, type, signupData } = result;
+
+   if (type !== "register") {
+    return next(new AppError("Invalid OTP type", 400));
+  }
+
+  const { username, passwordHash } = signupData;
+
+  const user = await User.create({
+    email,
+    username,
+    password: passwordHash,
+    isVerified: true,
+  });
+
+  res.json({
+    message: "Signup successful",
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    },
+  });
+});
+
+
+
+export const resendOtp = catchAsync(async (req, res, next) => {
+  const { otpSession } = req.body;
+  if (!otpSession) return next(new AppError("OTP session required", 400));
+
+  const record = await Otp.findById(otpSession);
+  if (!record || record.used) {
+    return next(new AppError("OTP session invalid or expired", 400));
+  }
+
+  const { email, type, signupData } = record;
+
+   record.used = true;
+  await record.save();
+
+  const {otpSession:newSession} = await sendOTP(email, type, signupData);
+
+  res.json({
+    message: "OTP resent successfully",
+    otpSession: newSession,
+  });
+});
+
+export const forgetPassword = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) return next(new AppError("Email required", 400));
+
+  const user = await User.findOne({ email });
+  if (!user) return next(new AppError("User not found", 404));
+
+  const {otpSession} = await sendOTP(email, "forgot");
+
+  res.json({
+    message: "OTP sent",
+    otpSession,
+  });
+});
+
+export const resetPassword = catchAsync(async (req, res, next) => {
+  const { otp, otpSession, newPassword } = req.body;
+
+  if (!otp || !otpSession || !newPassword) {
+    return next(new AppError("All fields required", 400));
+  }
+
+  const result = await verifyOTPService(otp, otpSession);
+  
+  if ( result.type !== "forgot") {
+    return next(new AppError("Invalid OTP", 400));
+  }
+
+  const passwordHash = await createHash(newPassword)
+
+  await User.updateOne(
+    { email: result.email },
+    { password: passwordHash }
+  );
+
+  res.json({ message: "Password updated successfully" });
+});
+
+
+
+export const login=catchAsync(async (req, res, next) => {
+
     const { email, password } = req.body;
-    console.log(email, password);
     if (!email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return next(new AppError("all field are required", 400));
     }
 
-    const user = await User.findOne({ email });
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).send("Invalid credentials");
+    const user = await User.findOne({ email }).select("+password");
+     if (!user) return next(new AppError("Invalid credentials", 401))
+
+    const isMatchPassword = await compareHash(password,user.password) 
+    if (!isMatchPassword) return next(new AppError("Invalid credentials", 401))
 
     const { accessToken, refreshToken } = await generateTokens(user._id);
 
@@ -72,6 +177,7 @@ export async function login(req, res) {
       secure: false,
       sameSite: "lax",
       path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
     res.json({
@@ -83,37 +189,35 @@ export async function login(req, res) {
         email: user.email,
       },
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-export async function refreshToken(req, res) {
-  try {
+ 
+})
+
+
+
+
+export const refreshToken=catchAsync(async (req, res, next) => {
+  
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
-      return res.status(401).json({ message: "No refresh token provided" });
+      return next(new AppError("Refresh token required", 401));
     }
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, REFRESH_SECRET);
     } catch (error) {
-      return res.status(403).json({ message: "Invalid refresh token" });
+      return  next(new AppError("Invalid refresh token", 403));
     }
 
     let tokenData = await Auth.findOne({ userId: decoded.userId });
 
     if (!tokenData) {
-      return res.status(403).json({ message: " Refresh token not found" });
+      return next(new AppError("Refresh token not found", 403));
     }
 
-    const isValidRT = await bcrypt.compare(
-      refreshToken,
-      tokenData.refreshTokenHash
-    );
+    const isValidRT = await compareHash( refreshToken, tokenData.refreshTokenHash) 
     if (!isValidRT) {
-      return res.status(403).json({ message: "Refresh token mismatch" });
+      return next(new AppError("Refresh token mismatch", 403));
     }
 
     const { accessToken, refreshToken: newRefreshToken } = await generateTokens(
@@ -131,13 +235,11 @@ export async function refreshToken(req, res) {
       message: "New tokens generated",
       accessToken,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
+ 
+})
 
-export async function logout(req, res) {
-  try {
+export const logout=catchAsync(async (req, res, next) =>{
+ 
     const refreshToken = req.cookies?.refreshToken;
     if (refreshToken) {
       let decode;
@@ -157,9 +259,7 @@ export async function logout(req, res) {
       sameSite: "lax",
       path: "/",
     });
-    res.status(200).json({ message: "Logged out successfully" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+    res.json({ message: "Logged out successfully" });
+
 }
+)

@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "server.js",
   "type": "module",
-  
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js"
@@ -12,6 +11,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
@@ -22,6 +26,9 @@
     "module-alias": "^2.2.3",
     "mongodb": "^6.20.0",
     "mongoose": "^8.19.3",
-    "socket.io": "^4.8.1"
+    "nodemailer": "^7.0.11",
+    "resend": "^6.6.0",
+    "socket.io": "^4.8.1",
+    "zod": "^4.1.13"
   }
 }

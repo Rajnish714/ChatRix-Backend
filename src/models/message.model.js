@@ -15,14 +15,27 @@ const messageSchema = new mongoose.Schema(
  
     deliveredTo: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-  ],
+    ],
 
-  seenBy: [
+   seenBy: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-  ],
+   ],
+
     text: { type: String, required: true },
+  
+    messageType: {
+      type: String,
+      enum: ["text", "image", "gif", "video", "audio", "file"],
+      default: "text",
+    },
+
+    mediaUrl: {
+      type: String,
+      default: null,
+    },
+
+   },
  
-  },
   { timestamps: true }
 );
 

@@ -15,13 +15,24 @@ const chatSchema = new mongoose.Schema({
 
   groupName: {
     type: String,
-    default: null
+    default: null,
+    required: function(){
+      return this.isGroup
+    }
   },
 
   groupImage: {
     type: String,
-    default: null
+    default: "https://api.dicebear.com/9.x/adventurer/svg?seed=Emery"
   },
+
+createdBy:{
+  type:mongoose.Schema.Types.ObjectId,
+  ref:"User",
+  required: function (){
+    return this.isGroup
+  }
+ },
 
   admins: [
     {

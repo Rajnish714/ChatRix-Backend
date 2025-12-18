@@ -6,13 +6,13 @@ import listen from "./sockets/index.js"
 const server = http.createServer(app)
 import {Server} from "socket.io"
 import { connectDB } from "./src/config/config.js"
-
-//import { loaduser } from "./src/utils/loaduser.js"
-
-const PORT=3000
-const io = new Server(server, {
+const PORT = process.env.PORT || 4000;
+const HOST = "0.0.0.0";
+const allowedOrigins = process.env.CORS_ORIGINS.split(",");
+export const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
+    credentials: true,
   },
 });
 
@@ -23,8 +23,8 @@ async function onload() {
       
       listen(io)
        
-       server.listen(PORT,()=>{
-         console.log(`server has started at ${PORT}`);
+       server.listen(PORT,HOST,()=>{
+         console.log(`Server running on ${HOST}:${PORT}`);
        }
       )
    
