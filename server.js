@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 4000;
 const HOST = "0.0.0.0";
 
 const server = http.createServer(app);
-console.log("NODE_ENV =", process.env.NODE_ENV);
+
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
   : [];
