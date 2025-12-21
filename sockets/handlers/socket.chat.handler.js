@@ -42,12 +42,14 @@ socket.on("leaveChat", (chatId) => {
 });
 
   //chat for sending real time msgs and saving
-  socket.on("chat", async ({ chatId, text }) => {
+  socket.on("chat", async ({ chatId, messageType = "text", text = "", mediaUrl = null }) => {
     try {
       const msg = {
         chatId,
+        messageType,
+        mediaUrl,
         sender: socket.data.userId,
-        text: text,
+        text,
       };
 
       const message = await Message.create(msg);
@@ -104,34 +106,54 @@ const chatId = msg.chatId.toString();
   
 });
 
+socket.on("messageSeen", async ({ messageId }) => {
+  const userId = socket.data.userId;
 
- 
-  socket.on("messageSeen", async ({ messageId }) => {
-  try {
-    const userId = socket.data.userId;
+  const message = await Message.findById(messageId);
+  if (!message) return;
 
-    const message = await Message.findById(messageId);
-    if (!message) return;
+  if (message.sender.toString() === userId) return;
 
-    if (message.sender.toString() === userId) return;
+  await Message.updateOne(
+    { _id: messageId },
+    { $addToSet: { seenBy: userId } }
+  );
 
-    await Message.updateOne(
-      { _id: messageId, seenBy: { $ne: userId } },
-      { $addToSet: { seenBy: userId } }
-    );
+  const chatId = message.chatId.toString();
 
-    socket.to(message.chatId.toString()).emit("messagesSeenUpdate", {
-      messageId,
-      viewer: {
-        id: userId,
-        username: socket.data.username
-      }
-    });
-
-  } catch (err) {
-    console.error("Error updating seen messages:", err);
-  }
+  socket.to(chatId).emit("messagesSeenUpdate", {
+    chatId,
+    messageId,
+    viewerId: userId,
+  });
 });
+ 
+//   socket.on("messageSeen", async ({ messageId }) => {
+//   try {
+//     const userId = socket.data.userId;
+
+//     const message = await Message.findById(messageId);
+//     if (!message) return;
+
+//     if (message.sender.toString() === userId) return;
+
+//     await Message.updateOne(
+//       { _id: messageId, seenBy: { $ne: userId } },
+//       { $addToSet: { seenBy: userId } }
+//     );
+
+//     socket.to(message.chatId.toString()).emit("messagesSeenUpdate", {
+//       messageId,
+//       viewer: {
+//         id: userId,
+//         username: socket.data.username
+//       }
+//     });
+
+//   } catch (err) {
+//     console.error("Error updating seen messages:", err);
+//   }
+// });
 
 
   socket.on("disconnect", () => {

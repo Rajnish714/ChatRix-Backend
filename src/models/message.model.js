@@ -21,7 +21,11 @@ const messageSchema = new mongoose.Schema(
     { type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] }
    ],
 
-    text: { type: String, required: true },
+    text: { type: String, 
+        required: function () {
+    return this.messageType === "text";
+  }, 
+},
   
     messageType: {
       type: String,
