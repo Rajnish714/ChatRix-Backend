@@ -24,7 +24,7 @@ export const getCurrentUser=catchAsync(async (req, res, next) => {
     res.json({
       message:"user fetched successfully",
       user: {
-        id: user._id,
+        _id: user._id,
         username: user.username,
         email: user.email,
         profilePic: user.profilePic,
@@ -84,7 +84,7 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
   res.json({
     message: "Signup successful",
     user: {
-      id: user._id,
+      _id: user._id,
       username: user.username,
       email: user.email,
     },
@@ -182,7 +182,7 @@ export const login=catchAsync(async (req, res, next) => {
       message: "Login successful",
       accessToken,
       user: {
-        id: user._id,
+      _id: user._id,
         username: user.username,
         email: user.email,
       },

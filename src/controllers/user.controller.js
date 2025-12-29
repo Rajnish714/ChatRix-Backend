@@ -1,6 +1,7 @@
 import { User } from "../models/user.model.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import AppError from "../utils/AppError.js";
+import { paginate } from "../utils/pagination.js";
 export const getUsers=catchAsync(async (req, res, next) => {
 
   const myId = req.user?.userId;
@@ -22,3 +23,39 @@ export const getUsers=catchAsync(async (req, res, next) => {
     users
   });
 })
+
+export const searchUsers=catchAsync(async(req,res,next)=>{
+   const myId = req.user.userId;
+  if(!myId ) return next(new AppError("userId is required", 400));
+ 
+  const { q = "", page = 1, limit = 10 } = req.query;
+   if (!q.trim()) {
+    return res.status(200).json({
+      users: [],
+      hasMore: false,
+      pagination: null,
+    });
+  }
+  
+   const regex = new RegExp(q, "i");
+
+   const userFilter = {
+    username: regex,
+    _id: { $ne: myId }  
+  };
+     
+  const result = await paginate(
+    User,
+    userFilter,
+    page,
+    limit,
+    "_id username profilePic"
+  );
+
+   res.status(200).json({
+    message: "Search results fetched successfully",
+    users: result.data,
+    hasMore: result.pagination.hasNextPage,
+    pagination: result.pagination,
+  });
+ })

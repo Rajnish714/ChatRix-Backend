@@ -38,6 +38,7 @@ export const createGroup=catchAsync(async (req, res, next) =>{
 const io = getIO();
    const myId = req.user.userId;
    const { imageUrl,groupName,members } = req.body;
+   console.log(imageUrl);
    
     if(!myId ) return next(new AppError("userId is required", 400));
     if (!groupName) return next(new AppError("Group name is required", 400));

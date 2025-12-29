@@ -23,7 +23,7 @@ const chatSchema = new mongoose.Schema({
 
   groupImage: {
     type: String,
-    default: "https://api.dicebear.com/9.x/adventurer/svg?seed=Emery"
+    default: null
   },
 
 createdBy:{
