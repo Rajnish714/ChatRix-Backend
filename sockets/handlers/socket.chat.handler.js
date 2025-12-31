@@ -60,7 +60,7 @@ export async function registerSocketHandlers(io, socket) {
 
   socket.on("leaveChat", (chatId) => {
     socket.leave(chatId);
-    socket.data.chatId = null;
+ 
     console.log(`User ${socket.data.userId} left chat ${chatId}`);
   });
 

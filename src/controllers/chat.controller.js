@@ -141,8 +141,14 @@ export const addGroupMember=catchAsync(async (req, res, next) =>{
     $addToSet: { members: {$each: finalMembers} }},{new: true}
   ).populate("members", "username profilePic").populate("admins", "username")
 
+newMember.members.forEach((member) => {
+  io.to(member._id.toString()).emit("member-added", {
+    chat: newMember,
+  });
+});
+   
     res.status(200).json({message:"members added successfully",data:newMember})
-    io.to(chatId).emit("memberAdded", {chatId, member: newMember});
+   
    })
 
 //--------------Remove group member---------------------------------
@@ -266,7 +272,7 @@ export const addGroupAdmin=catchAsync(async (req, res, next) =>{
 
 export const removeGroupAdmin=catchAsync(async (req, res, next) =>{
     const io= getIO()
-    const { chatId } = req.query;
+    const { chatId } = req.query; // take it as a param in later update
     const myId = req.user.userId;
     const {  members } = req.body;
   
@@ -306,3 +312,70 @@ export const removeGroupAdmin=catchAsync(async (req, res, next) =>{
     res.status(200).json({message:"admin removed successfully",data:updatedGroup})
     io.to(chatId).emit("adminRemoved", {chatId, removedAdmins: removableAdmins});
    })
+
+   //--------------Leave group ---------------------------------
+   
+export const leaveGroup = catchAsync(async (req, res, next) => {
+  const io = getIO();
+  const { chatId } = req.query;
+  const myId = req.user.userId;
+
+  if (!chatId)
+    return next(new AppError("chatId is required", 400));
+
+  const group = await Chat.findById(chatId);
+  if (!group)
+    return next(new AppError("Group not found", 404));
+
+  if (!group.isGroup)
+    return next(new AppError("Cannot leave 1v1 chat", 400));
+
+  const isMember = group.members
+    .map(m => m.toString())
+    .includes(myId);
+
+  if (!isMember)
+    return next(new AppError("You are not a group member", 403));
+
+  const isAdmin = group.admins
+    .map(a => a.toString())
+    .includes(myId);
+
+ 
+  group.members = group.members.filter(
+    m => m.toString() !== myId
+  );
+
+  if (isAdmin) {
+    group.admins = group.admins.filter(
+      a => a.toString() !== myId
+    );
+
+   
+    if (group.admins.length === 0 && group.members.length > 0) {
+      group.admins.push(group.members[0]);
+    }
+  }
+
+  if (group.members.length === 0) {
+    await Chat.findByIdAndDelete(chatId);
+
+    io.to(chatId).emit("groupDeleted", { chatId });
+
+    return res.status(200).json({
+      message: "Group deleted (last member left)",
+    });
+  }
+
+  await group.save();
+
+ 
+  io.to(chatId).emit("memberLeft", {
+    chatId,
+    userId: myId,
+  });
+
+  res.status(200).json({
+    message: "Left group successfully",
+  });
+});
