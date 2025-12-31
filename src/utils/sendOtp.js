@@ -35,7 +35,8 @@ const resend = new Resend(process.env.RESEND_KEY);
 export async function sendOTPEmail(email, otp) {
   try {
    const data = await resend.emails.send({
-      from: "Chatrix <onboarding@resend.dev>",
+     from: "Chattrix <no-reply@chattrix.in>",
+
       to: email,
       subject: "Your Chatrix OTP",
       html: `
