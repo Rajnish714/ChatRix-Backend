@@ -48,7 +48,7 @@ export const sendOTPEmail= async (email, otp) => {
 //         </div>
 //       `,
 //     });
-//     console.log("✅ Email sent successfully:", data);
+//    
 //   } catch (error) {
 //     console.error("❌ Failed to send OTP email", error);
 //     throw new Error("Failed to send OTP email");

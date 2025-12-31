@@ -6,9 +6,9 @@ export const connectDB = async () => {
       dbName: "chatapp",
     });
     
-       console.log("db connected");
+
     }catch(err){
-        console.log(err);
+        console.error(err);
     }
 
 }

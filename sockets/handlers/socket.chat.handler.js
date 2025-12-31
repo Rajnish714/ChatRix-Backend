@@ -55,13 +55,12 @@ export async function registerSocketHandlers(io, socket) {
     socket.join(chatId);
     socket.data.chatId = chatId;
     socket.emit("chatId", chatId);
-    console.log(`User ${socket.data.userId} joined chat ${chatId}`);
+    
   });
 
   socket.on("leaveChat", (chatId) => {
     socket.leave(chatId);
- 
-    console.log(`User ${socket.data.userId} left chat ${chatId}`);
+
   });
 
 
@@ -101,7 +100,7 @@ export async function registerSocketHandlers(io, socket) {
 
         io.to(chatId).emit("chat", payload);
       } catch (error) {
-        console.log("error in saving msg", error);
+        console.error("error in saving msg", error);
       }
     }
   );
@@ -116,10 +115,10 @@ export async function registerSocketHandlers(io, socket) {
 
     if (updatedSockets.length === 0) {
       onlineUser.delete(userId);
-      console.log(` ${userId} fully disconnected`);
+      
     } else {
       onlineUser.set(userId, updatedSockets);
-      console.log(` ${userId} closed one tab, still online`);
+
     }
 
     io.emit("online_users", Array.from(onlineUser.keys()));
@@ -145,8 +144,6 @@ export async function registerSocketHandlers(io, socket) {
 
   socket.data.userId = userId;
   socket.data.username = user.username;
-
-  console.log(` ${userId} connected (${socket.id})`);
 
   io.emit("online_users", Array.from(onlineUser.keys()));
 }
