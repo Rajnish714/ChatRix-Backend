@@ -8,7 +8,7 @@ const otpSchema = new mongoose.Schema({
    signupData: {
     type: {
       passwordHash: { type: String },
-      username: { type: String },
+      name: { type: String },
       profilePic: { type: String },
      },
     default: undefined, 

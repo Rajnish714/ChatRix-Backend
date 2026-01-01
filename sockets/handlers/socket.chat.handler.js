@@ -87,7 +87,8 @@ export async function registerSocketHandlers(io, socket) {
           chatId,
           sender: {
             _id: socket.data.userId,
-            username: socket.data.username,
+              name:socket.data.name,
+             username: socket.data.username,
           },
           text,
           deliveredTo: [],
@@ -128,7 +129,7 @@ export async function registerSocketHandlers(io, socket) {
 
   const userId = socket.data.userId;
 
-  const user = await User.findById(userId).select("username");
+  const user = await User.findById(userId).select("name username");
   if (!user) {
     socket.disconnect();
     return;
@@ -143,6 +144,7 @@ export async function registerSocketHandlers(io, socket) {
   onlineUser.get(userId).push(socket.id);
 
   socket.data.userId = userId;
+  socket.data.name=user.name;
   socket.data.username = user.username;
 
   io.emit("online_users", Array.from(onlineUser.keys()));

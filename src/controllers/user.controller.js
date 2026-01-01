@@ -2,6 +2,9 @@ import { User } from "../models/user.model.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import AppError from "../utils/AppError.js";
 import { paginate } from "../utils/pagination.js";
+import { getIO } from "../../sockets/sockets.js";
+import { uploadImage } from "../services/upload.service.js";
+
 export const getUsers=catchAsync(async (req, res, next) => {
 
   const myId = req.user?.userId;
@@ -10,9 +13,10 @@ export const getUsers=catchAsync(async (req, res, next) => {
     return next(new AppError("Unauthorized user", 401));
   }
 
-  const users = await User.find({ 
-    _id: { $ne: myId }    
-  });
+const users = await User.find(
+  { _id: { $ne: myId } },
+  "_id username profilePic"
+);
 
   if (!users || users.length === 0) {
     return next(new AppError("No users found", 404));
@@ -60,15 +64,10 @@ export const searchUsers=catchAsync(async(req,res,next)=>{
   });
  })
 
- export const updateMyProfile = catchAsync(async (req, res, next) => {
+export const updateMyProfile = catchAsync(async (req, res, next) => {
+  const io = getIO();
   const userId = req.user.userId;
   const updates = {};
-
-
-  if (req.body.username) {
-    updates.username = req.body.username;
-  }
-
 
   if (req.file) {
     updates.profilePic = await uploadImage({
@@ -85,7 +84,17 @@ export const searchUsers=catchAsync(async(req,res,next)=>{
     userId,
     updates,
     { new: true }
-  ).select("username profilePic");
+  ).select("_id profilePic");
+
+  if (!user) {
+    return next(new AppError("User not found", 404));
+  }
+
+  
+  io.emit("user_profile_updated", {
+    userId: user._id.toString(),
+    profilePic: user.profilePic,
+  });
 
   res.json({ data: user });
 });

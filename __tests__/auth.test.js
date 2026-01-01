@@ -28,7 +28,7 @@ describe("Auth flow (OTP session based)", () => {
     const res = await request(app)
       .post("/v1/auth/signup")
       .send({
-        username: "testuser",
+        name: "testuser",
         email: "test@test.com",
         password: "Password123!"
       });
@@ -42,7 +42,7 @@ describe("Auth flow (OTP session based)", () => {
       email: "test@test.com",
       type: "register",
       signupData: {
-        username: "testuser",
+        name: "testuser",
         passwordHash: "$2b$10$hashedpassword"
       }
     });
@@ -58,6 +58,6 @@ describe("Auth flow (OTP session based)", () => {
 
     const user = await User.findOne({ email: "test@test.com" });
     expect(user).not.toBeNull();
-    expect(user.username).toBe("testuser");
+    expect(user.name).toBe("testuser");
   });
 });

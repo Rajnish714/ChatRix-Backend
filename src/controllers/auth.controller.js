@@ -7,6 +7,7 @@ import { Auth } from "../models/auth.model.js";
 import { Otp } from "../models/otp.model.js";
 import { sendOTP,verifyOTPService } from "../services/otp.services.js";
 import { createHash,compareHash } from "../utils/hash.js";
+import { generateUniqueUsername } from "../utils/generateUniqueUsername.js";
 
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const  isProd = process.env.NODE_ENV === "production";
@@ -25,6 +26,7 @@ export const getCurrentUser=catchAsync(async (req, res, next) => {
       message:"user fetched successfully",
       user: {
         _id: user._id,
+        name:user.name,
         username: user.username,
         email: user.email,
         profilePic: user.profilePic,
@@ -36,9 +38,9 @@ export const getCurrentUser=catchAsync(async (req, res, next) => {
 
 export const signup=catchAsync(async (req, res, next) => {
  
-  const { username, email,password} = req.body;
+  const { name, email,password} = req.body;
     
-   if(!username || !email || !password) return next(new AppError("all field are required", 400));
+   if(!name || !email || !password) return next(new AppError("all field are required", 400));
     
    const existing = await User.findOne({ email });
    if (existing) return next(new AppError("Email already registered", 400));
@@ -46,7 +48,7 @@ export const signup=catchAsync(async (req, res, next) => {
     const passwordHash = await createHash(password)
     
     const {otpSession}= await sendOTP(email,"register",{
-    username,
+    name,
     passwordHash,
   })
 
@@ -72,11 +74,12 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid OTP type", 400));
   }
 
-  const { username, passwordHash } = signupData;
-
+  const {name, passwordHash } = signupData;
+  const username= await generateUniqueUsername(name)
   const user = await User.create({
-    email,
+    name,
     username,
+    email,
     password: passwordHash,
     isVerified: true,
   });
@@ -85,6 +88,7 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
     message: "Signup successful",
     user: {
       _id: user._id,
+      name:user.name,
       username: user.username,
       email: user.email,
     },
@@ -183,8 +187,9 @@ export const login=catchAsync(async (req, res, next) => {
       accessToken,
       user: {
       _id: user._id,
-        username: user.username,
-        email: user.email,
+      name:user.name,
+      username: user.username,
+      email: user.email,
       },
     });
  

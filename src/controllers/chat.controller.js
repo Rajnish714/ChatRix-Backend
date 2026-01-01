@@ -14,7 +14,7 @@ export const getorCreatePrivateChatId = catchAsync(async (req, res, next) => {
   let chat = await Chat.findOne({
     isGroup: false,
     members: { $all: [myId, otherUserId] },
-  }).populate("members", "username profilePic");
+  }).populate("members", "name username profilePic");
 
   if (!chat) {
     chat = await Chat.create({
@@ -22,7 +22,7 @@ export const getorCreatePrivateChatId = catchAsync(async (req, res, next) => {
       members: [myId, otherUserId],
     });
 
-    chat = await Chat.findById(chat._id).populate("members", "username profilePic");
+    chat = await Chat.findById(chat._id).populate("members", "name username profilePic");
 
     
     io.to([otherUserId, myId]).emit("new_chat", chat);
@@ -76,8 +76,8 @@ const io = getIO();
     })
 
       await newGroup.populate([
-    { path: "members", select: "username profilePic" },
-    { path: "admins",  select: "username" }
+    { path: "members", select: "name username profilePic" },
+    { path: "admins",  select: "name username" }
   ]);
 
    newGroup.members.forEach((member) => {
@@ -99,7 +99,7 @@ export const getAllChats = catchAsync(async (req, res, next) => {
   const chats = await Chat.find({
     members: myId
   })
-    .populate("members", "username profilePic")
+    .populate("members", "name username profilePic")
     .populate({
       path: "lastMessage",
       select: "text sender createdAt"
@@ -124,8 +124,8 @@ export const getMyGroups=catchAsync(async (req, res, next) =>{
     isGroup: true,
     members: { $in: [myId] }   
   })
-  .populate("members", "username profilePic") 
-  .populate("admins", "username")
+  .populate("members", "name username profilePic") 
+  .populate("admins", "name username")
   .sort({ updatedAt: -1 }); 
 
    if(!groups) return next(new AppError("groups not found", 404));
@@ -157,7 +157,7 @@ export const addGroupMember=catchAsync(async (req, res, next) =>{
   
     const newMember=await Chat.findByIdAndUpdate(chatId, {
     $addToSet: { members: {$each: finalMembers} }},{new: true}
-  ).populate("members", "username profilePic").populate("admins", "username")
+  ).populate("members", "name username profilePic").populate("admins", "name username")
 
 newMember.members.forEach((member) => {
   io.to(member._id.toString()).emit("member-added", {
@@ -229,8 +229,8 @@ const io= getIO()
     }
 
     const updatedGroup = await Chat.findById(chatId)
-      .populate("members", "username profilePic")
-      .populate("admins", "username");
+      .populate("members", "name username profilePic")
+      .populate("admins", "name username");
 
     res.status(200).json({
       message: "Members removed successfully",
@@ -278,7 +278,7 @@ export const addGroupAdmin=catchAsync(async (req, res, next) =>{
    
     const updatedGroup = await Chat.findByIdAndUpdate(chatId, {
     $addToSet: { admins: {$each: nonAdminMembers} }},
-    {new: true}).populate("members", "username profilePic").populate("admins", "username");
+    {new: true}).populate("members", "name username profilePic").populate("admins", "name username");
 
     res.status(200).json({message:"admin added successfully",data:updatedGroup})
     io.to(chatId).emit("adminAdded", {chatId, addedAdmins: nonAdminMembers});
@@ -325,7 +325,7 @@ export const removeGroupAdmin=catchAsync(async (req, res, next) =>{
   
     const updatedGroup = await Chat.findByIdAndUpdate(chatId, {
     $pull: { admins: {$in: removableAdmins} }},
-    {new: true}).populate("members", "username profilePic").populate("admins", "username");
+    {new: true}).populate("members", "name username profilePic").populate("admins", "name username");
 
     res.status(200).json({message:"admin removed successfully",data:updatedGroup})
     io.to(chatId).emit("adminRemoved", {chatId, removedAdmins: removableAdmins});

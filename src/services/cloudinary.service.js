@@ -1,6 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-// import { CloudinaryStorage } from "multer-storage-cloudinary";
-
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,17 +6,24 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export default cloudinary;
+export async function uploadImage({
+  file,
+  folder = "chattrix/images",
+}) {
+  if (!file) throw new Error("No file provided");
 
-// export const cloudinaryStorage = new CloudinaryStorage({
-//   cloudinary,
-//   params: async (_req, file) => ({
-//     folder: "chattrix/images",
-//     resource_type: "image", // ✅ FORCE image-only
-//     allowed_formats: ["jpg", "jpeg", "png", "webp"],
-//     public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
-//     transformation: [
-//       { width: 500, height: 500, crop: "limit", quality: "auto" },
-//     ],
-//   }),
-// });
+  const base64 = file.buffer.toString("base64");
+  const dataUri = `data:${file.mimetype};base64,${base64}`;
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    folder,
+    resource_type: "image",
+    transformation: [
+      { width: 500, height: 500, crop: "limit", quality: "auto" },
+    ],
+  });
+
+  return result.secure_url;
+}
+
+export default cloudinary;

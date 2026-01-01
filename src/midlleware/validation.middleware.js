@@ -3,7 +3,7 @@ import AppError from "../utils/AppError.js";
 import { z } from "zod";
 
 export const signupSchema = z.object({
-  username: z.string().min(2, { message: "Username must be at least 2 characters" }),
+  name: z.string().min(2, { message: "name must be at least 2 characters" }),
   email: z.email({ message: "Invalid email format" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
