@@ -4,6 +4,7 @@ import usersRouter from "./users/users.router.js"
 import messagesRouter from "./messages/messages.router.js";
 import chatRouter from "./chat/chat.router.js"
 import globalRouter from "./global/global.router.js"
+import reloadRouter from "./reload/reload.router.js";
 
 const api = express.Router();
 
@@ -12,6 +13,6 @@ api.use("/users", usersRouter);
 api.use("/messages", messagesRouter);
 api.use("/chat", chatRouter);
 api.use("/search", globalRouter);
-
+api.use("/reload", reloadRouter);
 
 export default api;

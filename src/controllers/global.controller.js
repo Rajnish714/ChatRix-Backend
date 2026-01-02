@@ -42,4 +42,3 @@ export const searchAll=catchAsync(async (req, res, next) =>{
  })
 
 
- 
